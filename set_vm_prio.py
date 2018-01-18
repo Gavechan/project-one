@@ -14,6 +14,7 @@ temp=[0 for x in range(0, 10)]
 RX_NUMBER_COLUMN=1
 TX_NUMBER_COLUMN=0
 ROUND_TIME=1
+list_of_VM_neededtoBeMonitorred=['macvtap0','macvtap1']
 
 #input is different packets number in different VMs, calculated according priority based on that
 def calculate_priority(numlist): 
@@ -51,6 +52,7 @@ def set_vm_priority(priolist):
         conn.close()
 
 #main loop
+list_of_iface=[]
 while True:
     time.sleep(ROUND_TIME)
     listOfFlow = []
@@ -60,13 +62,10 @@ while True:
         ifaces = tree.findall('devices/interface/target')
         for i in ifaces:
             iface = i.get('dev')
-            if iface == 'macvtap0': #need to change this 
-                length=len(listOfFlow)
-                listOfFlow.append(printNicInfo(iface,temp[length]))
-                temp[length] = int(ifaceinfo[RX_NUMBER_COLUMN])
-            if iface == 'macvtap1':
-                length = len(listOfFlow)
-                listOfFlow.append(printNicInfo(iface,temp[length]))
+            list_of_iface.append(iface)
+        for iface in list_of_iface:
+            for iface in list_of_VM_neededtoBeMonitorred:
+                listOfFlow.append(printNicInfo(iface,temp[len(listOfFlow)]))
                 temp[length] = int(ifaceinfo[RX_NUMBER_COLUMN])
     set_vm_priority(calculate_priority(listOfFlow))
     print
