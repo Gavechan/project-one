@@ -9,10 +9,13 @@ from xml.etree import ElementTree
 conn = libvirt.open("qemu:///system")
 interfaces_list=['macvtap0','macvtap1']
 temp=[0 for x in range(0, 10)]
+#0-6 represent rx_bytes, rx_packet,rx_errs,rx_drop,tx_bytes,tx_packets,tx_err,tx_drops
+
 RX_NUMBER_COLUMN=1
 TX_NUMBER_COLUMN=0
 ROUND_TIME=1
-
+#magic num used to contrl first print act
+magic_num=0
 #input is different packets number in different VMs, calculated according priority based on that
 def calculate_priority(numlist): 
         base = 1024
@@ -29,10 +32,10 @@ def calculate_priority(numlist):
         return prio
 
 #get different packets number in different VMs
-def get_nic_info(str,midvalue):
+def get_nic_info(str,last_time_value):
     global ifaceinfo
     ifaceinfo = domain.interfaceStats(iface)
-    flowOfPackets = int(ifaceinfo[RX_NUMBER_COLUMN]) - midvalue
+    flowOfPackets = int(ifaceinfo[RX_NUMBER_COLUMN]) - last_time_value
     #print(flowOfPackets,domain.name(), iface, ifaceinfo)
     return flowOfPackets
 
@@ -60,6 +63,7 @@ def filter_nic_info(iface):
 #main loop
 while True:
     time.sleep(ROUND_TIME)
+    #list_of_rx_pack represents the num of diffrent flows
     list_of_rx_pack = []
     for id in conn.listDomainsID():
         domain = conn.lookupByID(id)
@@ -68,6 +72,8 @@ while True:
         for i in ifaces:
             iface = i.get('dev')
             filter_nic_info(iface)
-    set_vm_priority(calculate_priority(list_of_rx_pack))
+    if magic_num != 0:
+        set_vm_priority(calculate_priority(list_of_rx_pack))
+    magic_num=1
     print
 conn.close()
